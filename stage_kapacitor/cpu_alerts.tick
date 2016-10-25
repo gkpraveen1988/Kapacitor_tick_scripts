@@ -1,0 +1,9 @@
+stream
+    // Select just the cpu measurement from our example database.
+    |from().measurement('cpu')
+    |alert()
+        .info(lambda: "usage_idle" >  90)
+        .warn(lambda: "usage_idle" <  80)
+        .crit(lambda: "usage_idle" <  85)
+        // Whenever we get an alert write it to a file.
+        .log('/var/tmp/kapacitor/alerts.log')
