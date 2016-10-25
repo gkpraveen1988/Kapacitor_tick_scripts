@@ -1,3 +1,0 @@
-kapacitor delete tasks $1
-kapacitor define $1 -type batch -dbrp asgbackup.autogen -tick point_miss.tick
-kapacitor enable $1
