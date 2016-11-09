@@ -1,0 +1,18 @@
+stream
+    |from()
+	  .database('asgbackup')
+	  .retentionPolicy('autogen')
+	  .measurement('drive_info')
+  	  .where(lambda: 'target' == 'Mysqltest6')
+          .groupBy('target')
+    |window()
+        .period(1s)
+        .every(1s)
+    |mean('duration')
+        .as('mean')
+    |alert()
+        .message('MEAN: {{ index .Fields "mean" }}')
+        .crit(lambda: TRUE)
+        .slack()
+        .log('/var/tmp/kapacitor/files.log')
+
