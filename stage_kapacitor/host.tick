@@ -1,0 +1,16 @@
+var slack_channel = '#kapacitoralerts'
+var period = 3d
+batch
+    |query('''SELECT count(bytes) as hb FROM "asgbackup"."autogen"."drive_info"''')
+     .period(period)
+     .every(5s)
+     .groupBy(time(1d))
+    |eval(lambda: if("hb" < 2, 'true', 'false')) 
+      .as ('backupstat')
+    |alert()
+  	   .message('''{{ if eq .Level "CRITICAL" }}Backup didnot happen in the past 3 days{{ else }}Backup Successfull!!!{{ end }}''')
+           .info(lambda: "backupstat" == 'true')
+           .crit(lambda: "backupstat" == 'false')
+           .slack()
+           .channel(slack_channel)
+           .log('/var/tmp/kapacitor/points.log')

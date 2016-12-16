@@ -1,0 +1,27 @@
+var last_value = batch
+    |query(''' select target as last_target,bytes from "asgbackup"."autogen"."drive_info" LIMIT 1 ''')
+        .period(30d)
+        .every(30s)
+
+var last_24h_stddev = batch
+    |query(''' 
+         SELECT stddev("duration") AS durationstd 
+	 FROM "asgbackup"."autogen"."drive_info" 
+	 WHERE target='Mysqltest8'
+         ''')
+        .period(30d)
+        .every(30s)
+        .groupBy('target')
+
+last_value
+    |join(last_24h_stddev)
+        .as('last_target', 'durationstd')
+        //.tolerance(10m)
+    |eval(lambda: "last_value.last_target",
+          lambda: "last_24h_stddev.durationstd")
+        .as('last_value_last', 'stddev')
+    |alert()
+        .message('Last value: {{ index .Fields "last_value_last" }}, Last deviation: {{ index .Fields "stddev" }}')
+        .crit(lambda: TRUE)
+	.slack()
+	.log('/var/tmp/kapacitor/files.log')
